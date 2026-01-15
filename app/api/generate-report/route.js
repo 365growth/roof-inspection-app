@@ -29,32 +29,34 @@ export async function POST(request) {
         const photo = data.photos[i];
         if (photo.preview) {
           try {
-            // Upload to Cloudinary using JSON
+            console.log(`Uploading photo ${i + 1}, preview length: ${photo.preview.length}`);
+            
+            // Use form-urlencoded for Cloudinary
+            const params = new URLSearchParams();
+            params.append('file', photo.preview);
+            params.append('upload_preset', process.env.CLOUDINARY_UPLOAD_PRESET);
+            
             const cloudinaryResponse = await fetch(
               `https://api.cloudinary.com/v1_1/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload`,
               {
                 method: 'POST',
                 headers: {
-                  'Content-Type': 'application/json'
+                  'Content-Type': 'application/x-www-form-urlencoded'
                 },
-                body: JSON.stringify({
-                  file: photo.preview,
-                  upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET,
-                  folder: 'roof-inspections'
-                })
+                body: params.toString()
               }
             );
             
             const cloudinaryData = await cloudinaryResponse.json();
-            console.log('Cloudinary response:', JSON.stringify(cloudinaryData).substring(0, 200));
             
             if (cloudinaryData.secure_url) {
+              console.log(`Photo ${i + 1} uploaded:`, cloudinaryData.secure_url);
               photoUrls.push({
                 url: cloudinaryData.secure_url,
                 caption: photo.caption || `Photo ${i + 1}`
               });
             } else {
-              console.error('Cloudinary error:', cloudinaryData.error?.message || 'Unknown error');
+              console.error('Cloudinary error:', JSON.stringify(cloudinaryData));
             }
           } catch (uploadError) {
             console.error('Photo upload error:', uploadError.message);
@@ -63,7 +65,7 @@ export async function POST(request) {
       }
     }
 
-    console.log('Photos uploaded:', photoUrls.length);
+    console.log('Total photos uploaded:', photoUrls.length);
 
     // Prepare PDF data
     const pdfData = {
@@ -118,7 +120,6 @@ export async function POST(request) {
       });
 
       const pdfResult = await pdfMonkeyResponse.json();
-      console.log('PDFMonkey response:', pdfResult.document?.id || 'No ID');
       
       if (pdfResult.document?.id) {
         pdfUrl = await waitForPdf(pdfResult.document.id);
@@ -136,7 +137,6 @@ export async function POST(request) {
           data.rooferInfo?.company_name || 'Roofing Company',
           pdfUrl
         );
-        console.log('SMS sent successfully');
       } catch (smsError) {
         console.error('SMS error:', smsError.message);
       }
@@ -199,7 +199,6 @@ async function waitForPdf(documentId) {
 async function sendSmsViaGhl(phone, customerName, companyName, pdfUrl) {
   const message = `Hi ${customerName}, here's your roof inspection report from ${companyName}: ${pdfUrl}`;
 
-  // First, create or find the contact
   const contactResponse = await fetch('https://services.leadconnectorhq.com/contacts/', {
     method: 'POST',
     headers: {
@@ -218,7 +217,6 @@ async function sendSmsViaGhl(phone, customerName, companyName, pdfUrl) {
   const contactId = contactData.contact?.id;
 
   if (contactId) {
-    // Send SMS to the contact
     await fetch('https://services.leadconnectorhq.com/conversations/messages', {
       method: 'POST',
       headers: {
