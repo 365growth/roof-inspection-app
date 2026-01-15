@@ -301,4 +301,250 @@ body {
 
 .photo-icon {
   font-size: 28px;
-  color: #9
+  color: #999;
+  margin-bottom: 4px;
+}
+
+.photo-text {
+  font-size: 11px;
+  color: #999;
+}
+
+.recommendation-toggle {
+  display: flex;
+  gap: 12px;
+}
+
+.recommendation-option {
+  flex: 1;
+  padding: 20px;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: white;
+}
+
+.recommendation-option:hover {
+  border-color: #2d5a87;
+}
+
+.recommendation-option.selected {
+  border-color: #2d5a87;
+  background: #f0f7ff;
+}
+
+.recommendation-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.recommendation-label {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.estimate-range {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.estimate-input {
+  flex: 1;
+  position: relative;
+}
+
+.estimate-input span {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #666;
+}
+
+.estimate-input input {
+  width: 100%;
+  padding: 14px 16px 14px 32px;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  font-size: 16px;
+}
+
+.estimate-input input:focus {
+  outline: none;
+  border-color: #2d5a87;
+}
+
+.estimate-separator {
+  font-weight: 500;
+  color: #666;
+}
+
+.nav-buttons {
+  display: flex;
+  gap: 12px;
+  padding: 20px;
+  background: white;
+  border-top: 1px solid #eee;
+}
+
+.btn {
+  flex: 1;
+  padding: 16px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-secondary {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.btn-secondary:hover {
+  background: #e0e0e0;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+  color: white;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(30, 58, 95, 0.3);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-submit {
+  background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%);
+  color: white;
+}
+
+.success-screen {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.success-icon {
+  width: 100px;
+  height: 100px;
+  background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%);
+  border-radius: 50%;
+  margin: 0 auto 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  color: white;
+  animation: scaleIn 0.5s ease;
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0); }
+  to { transform: scale(1); }
+}
+
+.success-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+}
+
+.success-message {
+  font-size: 16px;
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 32px;
+}
+
+.success-details {
+  background: #f5f5f5;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: left;
+}
+
+.success-detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.success-detail-row:last-child {
+  border-bottom: none;
+}
+
+.success-detail-label {
+  color: #666;
+}
+
+.success-detail-value {
+  font-weight: 500;
+  color: #333;
+}
+
+.summary-card {
+  background: #fafafa;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.summary-card-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: #666;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.summary-card-content {
+  font-size: 14px;
+  color: #333;
+}
+
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255,255,255,0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #e0e0e0;
+  border-top-color: #2d5a87;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-text {
+  margin-top: 16px;
+  font-size: 16px;
+  color: #666;
+}
