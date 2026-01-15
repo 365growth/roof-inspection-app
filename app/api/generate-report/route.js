@@ -29,23 +29,30 @@ export async function POST(request) {
         const photo = data.photos[i];
         if (photo.preview) {
           try {
+            // Use FormData for Cloudinary upload
+            const formData = new URLSearchParams();
+            formData.append('file', photo.preview);
+            formData.append('upload_preset', process.env.CLOUDINARY_UPLOAD_PRESET);
+            formData.append('folder', 'roof-inspections');
+
             const cloudinaryResponse = await fetch(
               `https://api.cloudinary.com/v1_1/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload`,
               {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  file: photo.preview,
-                  upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET
-                })
+                body: formData
               }
             );
+            
             const cloudinaryData = await cloudinaryResponse.json();
+            console.log('Cloudinary response:', cloudinaryData);
+            
             if (cloudinaryData.secure_url) {
               photoUrls.push({
                 url: cloudinaryData.secure_url,
                 caption: photo.caption || `Photo ${i + 1}`
               });
+            } else {
+              console.error('Cloudinary error:', cloudinaryData);
             }
           } catch (uploadError) {
             console.error('Photo upload error:', uploadError);
@@ -54,13 +61,15 @@ export async function POST(request) {
       }
     }
 
+    console.log('Photos uploaded:', photoUrls.length);
+
     // Prepare PDF data
     const pdfData = {
       company_name: data.rooferInfo?.company_name || 'Roofing Company',
       company_logo: data.rooferInfo?.company_logo || '',
-      company_phone: data.rooferInfo?.company_phone || '',
-      company_phone_raw: (data.rooferInfo?.company_phone || '').replace(/\D/g, ''),
-      company_email: data.rooferInfo?.company_email || '',
+      company_phone: data.rooferInfo?.company_phone || '(555) 123-4567',
+      company_phone_raw: (data.rooferInfo?.company_phone || '5551234567').replace(/\D/g, ''),
+      company_email: data.rooferInfo?.company_email || 'info@roofing.com',
       company_website: data.rooferInfo?.company_website || '',
       inspection_date: data.inspectionDate,
       customer_name: data.customerName,
@@ -107,6 +116,7 @@ export async function POST(request) {
       });
 
       const pdfResult = await pdfMonkeyResponse.json();
+      console.log('PDFMonkey response:', pdfResult);
       
       if (pdfResult.document?.id) {
         pdfUrl = await waitForPdf(pdfResult.document.id);
@@ -121,7 +131,7 @@ export async function POST(request) {
         await sendSmsViaGhl(
           data.homeownerPhone,
           data.customerName,
-          data.rooferInfo?.company_name,
+          data.rooferInfo?.company_name || 'Roofing Company',
           pdfUrl
         );
       } catch (smsError) {
@@ -132,7 +142,8 @@ export async function POST(request) {
     return NextResponse.json({
       success: true,
       reportId: reportId,
-      pdfUrl: pdfUrl
+      pdfUrl: pdfUrl,
+      photosUploaded: photoUrls.length
     });
 
   } catch (error) {
@@ -185,7 +196,8 @@ async function waitForPdf(documentId) {
 async function sendSmsViaGhl(phone, customerName, companyName, pdfUrl) {
   const message = `Hi ${customerName}, here's your roof inspection report from ${companyName}: ${pdfUrl}`;
 
-  await fetch('https://services.leadconnectorhq.com/conversations/messages', {
+  // First, create or find the contact
+  const contactResponse = await fetch('https://services.leadconnectorhq.com/contacts/', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${process.env.GHL_API_KEY}`,
@@ -193,10 +205,29 @@ async function sendSmsViaGhl(phone, customerName, companyName, pdfUrl) {
       'Version': '2021-07-28'
     },
     body: JSON.stringify({
-      type: 'SMS',
       phone: phone,
-      message: message,
+      name: customerName,
       locationId: process.env.GHL_LOCATION_ID
     })
   });
+
+  const contactData = await contactResponse.json();
+  const contactId = contactData.contact?.id;
+
+  if (contactId) {
+    // Send SMS to the contact
+    await fetch('https://services.leadconnectorhq.com/conversations/messages', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.GHL_API_KEY}`,
+        'Content-Type': 'application/json',
+        'Version': '2021-07-28'
+      },
+      body: JSON.stringify({
+        type: 'SMS',
+        contactId: contactId,
+        message: message
+      })
+    });
+  }
 }
