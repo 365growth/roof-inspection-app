@@ -29,22 +29,24 @@ export async function POST(request) {
         const photo = data.photos[i];
         if (photo.preview) {
           try {
-            // Use FormData for Cloudinary upload
-            const formData = new URLSearchParams();
-            formData.append('file', photo.preview);
-            formData.append('upload_preset', process.env.CLOUDINARY_UPLOAD_PRESET);
-            formData.append('folder', 'roof-inspections');
-
+            // Upload to Cloudinary using JSON
             const cloudinaryResponse = await fetch(
               `https://api.cloudinary.com/v1_1/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload`,
               {
                 method: 'POST',
-                body: formData
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  file: photo.preview,
+                  upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET,
+                  folder: 'roof-inspections'
+                })
               }
             );
             
             const cloudinaryData = await cloudinaryResponse.json();
-            console.log('Cloudinary response:', cloudinaryData);
+            console.log('Cloudinary response:', JSON.stringify(cloudinaryData).substring(0, 200));
             
             if (cloudinaryData.secure_url) {
               photoUrls.push({
@@ -52,10 +54,10 @@ export async function POST(request) {
                 caption: photo.caption || `Photo ${i + 1}`
               });
             } else {
-              console.error('Cloudinary error:', cloudinaryData);
+              console.error('Cloudinary error:', cloudinaryData.error?.message || 'Unknown error');
             }
           } catch (uploadError) {
-            console.error('Photo upload error:', uploadError);
+            console.error('Photo upload error:', uploadError.message);
           }
         }
       }
@@ -116,13 +118,13 @@ export async function POST(request) {
       });
 
       const pdfResult = await pdfMonkeyResponse.json();
-      console.log('PDFMonkey response:', pdfResult);
+      console.log('PDFMonkey response:', pdfResult.document?.id || 'No ID');
       
       if (pdfResult.document?.id) {
         pdfUrl = await waitForPdf(pdfResult.document.id);
       }
     } catch (pdfError) {
-      console.error('PDF generation error:', pdfError);
+      console.error('PDF generation error:', pdfError.message);
     }
 
     // Send SMS via GHL if requested
@@ -134,8 +136,9 @@ export async function POST(request) {
           data.rooferInfo?.company_name || 'Roofing Company',
           pdfUrl
         );
+        console.log('SMS sent successfully');
       } catch (smsError) {
-        console.error('SMS error:', smsError);
+        console.error('SMS error:', smsError.message);
       }
     }
 
@@ -147,7 +150,7 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('API Error:', error);
+    console.error('API Error:', error.message);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
